@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>AETHERFALL - Stage 1</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<section id="debug" aria-label="デバッグ情報">
+  <pre id="stats">起動中…</pre>
+  <ul id="legend"></ul>
+</section>
+
+<section id="settings" aria-label="グラフィック設定">
+  <label>品質
+    <select id="quality">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+      <option value="ultra">Ultra</option>
+    </select>
+  </label>
+  <label class="row"><input type="checkbox" id="auto"> 自動調整</label>
+  <label>露出 <input type="range" id="exposure" min="0.5" max="1.8" step="0.05" value="1"></label>
+</section>
+
+<div id="notice" role="status" hidden></div>
+<div id="fatal" role="alert" hidden></div>
+
+<script>
+// iPadにはコンソールがないため、起動失敗を画面に表示する
+(function () {
+  var box = document.getElementById('fatal');
+  function show(msg) { box.hidden = false; box.textContent = msg; }
+  window.addEventListener('error', function (e) { show('エラー: ' + (e.message || e.target && e.target.src || '不明')); });
+  window.addEventListener('unhandledrejection', function (e) { show('エラー: ' + (e.reason && e.reason.message || e.reason)); });
+  setTimeout(function () {
+    if (!window.__aetherBooted) show('起動できませんでした。ネットワーク接続とCDN(cdn.jsdelivr.net)へのアクセス、およびJSファイルの配置を確認してください。');
+  }, 8000);
+})();
+</script>
+<script type="module" src="main.js" onerror="var b=document.getElementById('fatal');b.hidden=false;b.textContent='main.js を読み込めません。index.html と同じ場所(リポジトリ直下)に main.js 等のJSファイルが全て置かれているか確認してください。';"></script>
+</body>
+</html>

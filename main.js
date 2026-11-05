@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { bus } from './core/eventbus.js';
-import * as Save from './core/save.js';
-import { QualityManager, LEVELS } from './core/quality.js';
-import { Gfx } from './core/renderer.js';
-import { Loop } from './core/loop.js';
-import { Input } from './core/input.js';
-import { buildTestScene } from './world/testScene.js';
-import { DebugPanel } from './ui/debugPanel.js';
+import { bus } from './eventbus.js';
+import * as Save from './save.js';
+import { QualityManager, LEVELS } from './quality.js';
+import { Gfx } from './renderer.js';
+import { Loop } from './loop.js';
+import { Input } from './input.js';
+import { buildTestScene } from './testScene.js';
+import { DebugPanel } from './debugPanel.js';
 
 const data = Save.load();
 const quality = new QualityManager(data.settings.quality, data.settings.autoQuality);

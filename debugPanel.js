@@ -1,4 +1,4 @@
-import { bus } from '../core/eventbus.js';
+import { bus } from './eventbus.js';
 
 const $ = (id) => document.getElementById(id);
 
