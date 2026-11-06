@@ -35,4 +35,4 @@ export function makeEnvironment(renderer) {
   env.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
   return tex;
 }
-export const BUILD = 'r6';
+export const BUILD = 'r7';

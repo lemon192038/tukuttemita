@@ -18,7 +18,7 @@ import * as mTestScene from './testScene.js';
 import * as mPanel from './debugPanel.js';
 import * as mHero from './hero.js';
 
-const BUILD = 'r6';
+const BUILD = 'r7';
 document.title = 'AETHERFALL ' + BUILD;
 
 const data = Save.load();
@@ -48,6 +48,7 @@ const panel = new DebugPanel({
 function applyQuality() {
   gfx.applyQuality(quality.preset);
   world.setParticleScale(quality.preset.particleScale);
+  world.setOutline(quality.preset.outline);
   data.settings.quality = quality.level;
   data.settings.autoQuality = quality.auto;
   Save.save(data);

@@ -37,4 +37,4 @@ export class DebugPanel {
       `粒子 ${d.particles}`;
   }
 }
-export const BUILD = 'r6';
+export const BUILD = 'r7';

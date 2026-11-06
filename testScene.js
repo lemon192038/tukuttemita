@@ -58,6 +58,7 @@ export function buildTestScene(renderer, kind = 'male') {
   pedestal.position.y = 0.09; pedestal.castShadow = pedestal.receiveShadow = true; scene.add(pedestal);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.015, 8, 64), new THREE.MeshStandardMaterial({ color: 0x222233, emissive: 0x7fa0ff, emissiveIntensity: 1.6 }));
   ring.rotation.x = Math.PI / 2; ring.position.y = 0.185; scene.add(ring);
+  let outlineOn = true;
   let hero = null, heroKind = kind;
   const disposeHero = () => {
     if (!hero) return;
@@ -68,7 +69,7 @@ export function buildTestScene(renderer, kind = 'male') {
   };
   const setHero = (k) => {
     disposeHero(); heroKind = k;
-    try { hero = buildHero(k); hero.root.position.y = 0.18; scene.add(hero.root); window.__heroError = null; }
+    try { hero = buildHero(k); hero.root.position.y = 0.18; scene.add(hero.root); hero.setOutline(outlineOn); window.__heroError = null; }
     catch (e) { console.error(e); window.__heroError = e && e.message ? e.message : String(e); }
   };
   setHero(kind);
@@ -109,6 +110,7 @@ export function buildTestScene(renderer, kind = 'male') {
 
   return {
     scene, keyLight: key,
+    setOutline(b) { outlineOn = b; if (hero) hero.setOutline(b); },
     setHero, get heroKind() { return heroKind; },
     labels: ['肌(シーン)', '髪(頂点カラー)', '布', '金', '銀', '発光', '革'],
     setParticleScale(s) { particleCount = Math.floor(BASE * s); pGeo.setDrawRange(0, particleCount); },
@@ -125,4 +127,4 @@ export function buildTestScene(renderer, kind = 'male') {
     },
   };
 }
-export const BUILD = 'r6';
+export const BUILD = 'r7';

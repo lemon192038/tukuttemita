@@ -14,4 +14,4 @@ export class EventBus {
   }
 }
 export const bus = new EventBus();
-export const BUILD = 'r6';
+export const BUILD = 'r7';

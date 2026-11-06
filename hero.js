@@ -8,59 +8,116 @@ const PI = Math.PI;
 const hex = (h) => new THREE.Color(h);
 const rnd = (k) => { const s = Math.sin(k * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s); };
 
-function irisTexture(cols = ['#34238a', '#6a5ae0', '#9ff0ff']) {
-  const c = document.createElement('canvas'); c.width = c.height = 128;
-  const g = c.getContext('2d');
-  const grad = g.createLinearGradient(0, 8, 0, 120);
-  grad.addColorStop(0, cols[0]); grad.addColorStop(0.55, cols[1]); grad.addColorStop(1, cols[2]);
-  g.fillStyle = grad; g.beginPath(); g.arc(64, 64, 62, 0, 7); g.fill();
-  g.strokeStyle = '#150e38'; g.lineWidth = 8; g.beginPath(); g.arc(64, 64, 59, 0, 7); g.stroke();
-  g.fillStyle = '#100826'; g.beginPath(); g.ellipse(64, 66, 17, 23, 0, 0, 7); g.fill();
-  g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(46, 40, 11, 13, -0.4, 0, 7); g.fill();
-  g.beginPath(); g.arc(82, 90, 5, 0, 7); g.fill();
+// アニメ調の顔: 目・眉・鼻・口・頬の赤みを1枚のテクスチャに描き、頭部表面のパッチに貼る。
+// 座標は頭部ローカルの物理座標(m)で指定し、X()/Y() でピクセルへ変換する。
+function faceTexture(sp) {
+  const W = 512, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), E = sp.eye, R0 = .103, PH = .62, Y0 = .055, Y1 = .21;
+  const X = (x) => ((Math.asin(Math.max(-.99, Math.min(.99, x / R0))) + PH) / (2 * PH)) * W;
+  const Y = (y) => (1 - (y - Y0) / (Y1 - Y0)) * H;
+  const S = (d) => X(d) - X(0);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+
+  for (const sx of [1, -1]) { // 頬
+    const bx = X(sx * .058), by = Y(.1), gr = g.createRadialGradient(bx, by, 0, bx, by, S(.022));
+    gr.addColorStop(0, 'rgba(255,110,130,.30)'); gr.addColorStop(1, 'rgba(255,110,130,0)');
+    g.fillStyle = gr; g.fillRect(bx - 60, by - 60, 120, 120);
+  }
+  g.strokeStyle = 'rgba(190,110,100,.75)'; g.lineWidth = 3; // 鼻
+  g.beginPath(); g.moveTo(X(-.004), Y(.108)); g.quadraticCurveTo(X(0), Y(.099), X(.006), Y(.104)); g.stroke();
+  g.strokeStyle = '#a84450'; g.lineWidth = 3.5; // 口
+  g.beginPath(); g.moveTo(X(-.012), Y(.073)); g.quadraticCurveTo(X(0), Y(.068 - (sp.eye.smile || 0)), X(.012), Y(.073)); g.stroke();
+  for (const sx of [1, -1]) { // 眉
+    g.strokeStyle = sp.hair[0]; g.lineWidth = E.brow;
+    g.beginPath(); g.moveTo(X(sx * .022), Y(.169)); g.quadraticCurveTo(X(sx * .042), Y(.179), X(sx * .063), Y(.166)); g.stroke();
+  }
+  for (const sx of [1, -1]) { // 目
+    const cx = X(sx * .04), cy = Y(.13), rx = S(E.w), ry = Math.abs(Y(.13 + E.h) - Y(.13)), tilt = -sx * E.tilt;
+    g.save(); g.beginPath(); g.ellipse(cx, cy, rx, ry, tilt, 0, 7); g.clip();
+    g.fillStyle = '#f7f3fb'; g.fillRect(0, 0, W, H);
+    const gr = g.createLinearGradient(0, cy - ry, 0, cy + ry);
+    gr.addColorStop(0, sp.iris[0]); gr.addColorStop(.55, sp.iris[1]); gr.addColorStop(1, sp.iris[2]);
+    g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy + ry * .06, rx * .8, ry * 1.02, 0, 0, 7); g.fill();
+    g.fillStyle = '#0d0820'; g.beginPath(); g.ellipse(cx, cy + ry * .08, rx * .3, ry * .5, 0, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.95)';
+    g.beginPath(); g.ellipse(cx - rx * .28, cy - ry * .32, rx * .2, ry * .22, 0, 0, 7); g.fill();
+    g.beginPath(); g.arc(cx + rx * .32, cy + ry * .38, rx * .09, 0, 7); g.fill();
+    const sh = g.createLinearGradient(0, cy - ry, 0, cy - ry * .2);
+    sh.addColorStop(0, 'rgba(20,10,50,.55)'); sh.addColorStop(1, 'rgba(20,10,50,0)');
+    g.fillStyle = sh; g.fillRect(cx - rx - 4, cy - ry - 2, rx * 2 + 8, ry * .9);
+    g.restore();
+    g.strokeStyle = sp.hair[0]; g.lineWidth = E.lw; // 上まつ毛
+    g.beginPath(); g.ellipse(cx, cy, rx, ry, tilt, PI * 1.03, PI * 1.97); g.stroke();
+    const a = sx > 0 ? PI * 1.97 : PI * 1.03; // 外側のはね
+    const ox = cx + rx * Math.cos(a) * Math.cos(tilt) - ry * Math.sin(a) * Math.sin(tilt);
+    const oy = cy + rx * Math.cos(a) * Math.sin(tilt) + ry * Math.sin(a) * Math.cos(tilt);
+    g.lineWidth = E.lw * .8; g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox + sx * S(.007), oy - S(.004)); g.stroke();
+    g.globalAlpha = .55; g.lineWidth = 2; // 下まつ毛
+    g.beginPath(); g.ellipse(cx, cy, rx, ry, tilt, PI * .12, PI * .88); g.stroke(); g.globalAlpha = 1;
+  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return t;
 }
 
+// 段階の少ない陰影(トゥーン)
+function toonGradient() {
+  const t = new THREE.DataTexture(new Uint8Array([70, 140, 205, 255]), 4, 1, THREE.RedFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true;
+  return t;
+}
+
 function makeMaterials(sp) {
+  const grad = toonGradient(), D = THREE.DoubleSide, K = .45; // K: トゥーンはライト強度をそのまま受けるため色を落として合わせる
+  const toon = (c, o = {}) => new THREE.MeshToonMaterial({ color: hex(c).multiplyScalar(K), gradientMap: grad, ...o });
   const std = (o) => new THREE.MeshStandardMaterial(o);
-  const D = THREE.DoubleSide, tex = irisTexture(sp.iris);
+  const ftex = faceTexture(sp);
+  const outline = new THREE.MeshBasicMaterial({ color: 0x15122a, side: THREE.BackSide }); // 反転ハル方式の輪郭線
+  outline.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normalize(normal) * 0.0035;');
+  };
   return {
-    skin: new THREE.MeshPhysicalMaterial({ color: 0xf2cdb8, roughness: 0.55, sheen: 0.5, sheenColor: hex(0xffb8a0), sheenRoughness: 0.5 }),
-    hair: new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.1, clearcoat: 0.6, clearcoatRoughness: 0.25, side: D }),
-    cloth: std({ color: sp.pal.cloth, roughness: 0.88, side: D }),
-    accent: std({ color: sp.pal.accent, roughness: 0.75, side: D }),
-    leather: std({ color: 0x3d2d26, roughness: 0.6 }),
-    gold: std({ color: 0xe0bd6a, roughness: 0.28, metalness: 1, side: D }),
-    silver: std({ color: 0xd3dae6, roughness: 0.22, metalness: 1, side: D }),
+    skin: toon(0xffd9c6),
+    hair: new THREE.MeshToonMaterial({ vertexColors: true, color: hex(0xffffff).multiplyScalar(K), gradientMap: grad, side: D }),
+    cloth: toon(sp.pal.cloth, { side: D }),
+    accent: toon(sp.pal.accent, { side: D }),
+    leather: toon(0x4a382f),
+    gold: std({ color: 0xe0bd6a, roughness: 0.3, metalness: 1, side: D }),
+    silver: std({ color: 0xd3dae6, roughness: 0.25, metalness: 1, side: D }),
     glow: std({ color: 0x2a2a66, emissive: sp.pal.glow, emissiveIntensity: 1.5, roughness: 0.3 }),
-    eyeW: std({ color: 0xf6f4fa, roughness: 0.25 }),
-    iris: std({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.3, roughness: 0.25 }),
-    dark: std({ color: 0x2c2442, roughness: 0.6 }),
-    lip: std({ color: sp.pal.lip, roughness: 0.45 }),
-    blade: std({ color: 0xe8eef8, roughness: 0.12, metalness: 1 }),
+    blade: std({ color: 0xe8eef8, roughness: 0.15, metalness: 1 }),
+    face: new THREE.MeshToonMaterial({
+      color: hex(0xffffff).multiplyScalar(.5), map: ftex, emissive: 0xffffff, emissiveMap: ftex, emissiveIntensity: .5,
+      gradientMap: grad, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    }),
+    outline,
   };
 }
 
-function tinted(geo, c0) {
-  const n = geo.attributes.position.count, a = new Float32Array(n * 3), c = hex(c0);
-  for (let i = 0; i < n; i++) a.set([c.r, c.g, c.b], i * 3);
+// 頭頂のキャップ用: 高さに応じて「天使の輪」状の明るい帯を頂点カラーで入れる
+function tinted(geo, c0, c1) {
+  const pos = geo.attributes.position, n = pos.count, a = new Float32Array(n * 3), base = hex(c0), hl = hex(c1), c = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    const b = Math.max(0, 1 - Math.abs(pos.getY(i) - .095) / .02);
+    c.copy(base).lerp(hl, b * .6);
+    a.set([c.r, c.g, c.b], i * 3);
+  }
   geo.setAttribute('color', new THREE.BufferAttribute(a, 3));
   return geo;
 }
 
-// 先細りする髪束(扁平な断面、根元→毛先で色が変わる)
-function strand(pts, r0, r1, c0, c1, flat = 0.55, N = 14, R = 7) {
+// アニメ風の髪房: 中ほどが膨らみ毛先がとがる。幅広の断面、根元は暗く毛先は明るく、途中に光の帯。
+function strand(pts, rMax, c0, c1, hl, flat = .6, N = 16, R = 8) {
   const curve = new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(p[0], p[1], p[2])));
   const fr = curve.computeFrenetFrames(N, false);
   const pos = [], col = [], uv = [], idx = [];
-  const ca = hex(c0), cb = hex(c1), c = new THREE.Color();
+  const ca = hex(c0), cb = hex(c1), ch = hex(hl), c = new THREE.Color();
   for (let i = 0; i <= N; i++) {
     const t = i / N, p = curve.getPointAt(t), n = fr.normals[i], b = fr.binormals[i];
-    const r = THREE.MathUtils.lerp(r0, r1, Math.pow(t, 0.7));
-    c.copy(ca).lerp(cb, t);
+    const r = rMax * Math.pow(Math.max(Math.sin(PI * (0.12 + 0.88 * t)), 0.02), 0.8);
+    c.copy(ca).lerp(cb, THREE.MathUtils.smoothstep(t, .45, 1));
+    c.lerp(ch, Math.max(0, 1 - Math.abs(t - .3) / .13) * .6);
     for (let j = 0; j <= R; j++) {
-      const a = (j / R) * PI * 2, cs = Math.cos(a) * r, sn = Math.sin(a) * r * flat;
+      const a = (j / R) * PI * 2, cs = Math.cos(a) * r * flat, sn = Math.sin(a) * r; // 幅広い方向 = binormal(頭の表面に沿う向き)
       pos.push(p.x + n.x * cs + b.x * sn, p.y + n.y * cs + b.y * sn, p.z + n.z * cs + b.z * sn);
       col.push(c.r, c.g, c.b); uv.push(j / R, t);
     }
@@ -78,23 +135,21 @@ function strand(pts, r0, r1, c0, c1, flat = 0.55, N = 14, R = 7) {
 }
 
 // 頭部の輪郭(半径, 高さ)。髪の生え際を頭蓋に沿わせるために表面Zも引く
-const HEAD = [[0, -.128], [.03, -.122], [.06, -.105], [.085, -.07], [.099, -.02], [.105, .03], [.104, .07], [.093, .108], [.07, .13], [.04, .142], [0, .146]];
-function skullZ(x, y) {
-  const yp = y - 0.13; let r = 0.04;
+const HEAD = [[0, -.128], [.022, -.126], [.045, -.114], [.07, -.085], [.09, -.04], [.103, .02], [.105, .07], [.093, .108], [.07, .13], [.04, .142], [0, .146]];
+function skullR(yp) {
   for (let i = 0; i < HEAD.length - 1; i++) {
     const a = HEAD[i], b = HEAD[i + 1];
-    if (yp >= a[1] && yp <= b[1]) { r = a[0] + (b[0] - a[0]) * (yp - a[1]) / (b[1] - a[1]); break; }
+    if (yp >= a[1] && yp <= b[1]) return a[0] + (b[0] - a[0]) * (yp - a[1]) / (b[1] - a[1]);
   }
-  return Math.sqrt(Math.max(r * r - x * x, 0.0004));
+  return 0.04;
 }
+function skullZ(x, y) { const r = skullR(y - 0.13); return Math.sqrt(Math.max(r * r - x * x, 0.0004)); }
 
-// 男女の差は SPEC(体格・配色・髪・瞳)と、buildHero 内の F(女性)分岐。関節構成は共通なので、
-// 後で作るモーションは両キャラで共有できる。
 const SPEC = {
   male:   { s: 1.04, sh: .205, cw: 1.12, ww: 1.12, hw: 1.0, ar: 1.1, hair: ['#14162c', '#3f78ff'], cap: '#15172e',
-            iris: ['#1d2f8a', '#3f7bff', '#9fe8ff'], pal: { cloth: 0x1b2347, accent: 0x2a58c8, glow: 0x7fd8ff, lip: 0xb8706a } },
+            iris: ['#1d2f8a', '#3f7bff', '#9fe8ff'], hl: '#8fb0ff', eye: { w: .02, h: .016, lw: 6, tilt: .12, brow: 7 }, pal: { cloth: 0x1b2347, accent: 0x2a58c8, glow: 0x7fd8ff, lip: 0xb8706a } },
   female: { s: .97, sh: .165, cw: .92, ww: .86, hw: 1.1, ar: .9, hair: ['#1d1a3e', '#cfd8ff'], cap: '#1a1838',
-            iris: ['#34238a', '#8a5ae0', '#ffb8f0'], pal: { cloth: 0x2a1c52, accent: 0xb04ad0, glow: 0xb48cff, lip: 0xd0707a } },
+            iris: ['#34238a', '#8a5ae0', '#ffb8f0'], hl: '#e6ecff', eye: { w: .022, h: .02, lw: 8, tilt: .16, brow: 5, smile: .003 }, pal: { cloth: 0x2a1c52, accent: 0xb04ad0, glow: 0xb48cff, lip: 0xd0707a } },
 };
 
 export function buildHero(kind = 'male') {
@@ -175,42 +230,39 @@ export function buildHero(kind = 'male') {
   add('cape', 'accent', cg, [0, 0, 0], [0, 0, 0], cs);
   add('cape', 'gold', box(.4, .025, .03), [0, -.01, -.03], [0, 0, 0], cs);
 
-  // ---- 頭部・顔 ----
-  add('head', 'skin', lathe(HEAD, 32), [0, .13, 0], [0, 0, 0], [F ? .96 : 1.02, 1, 1]);
-  for (const sx of [1, -1]) {
-    const ex = sx * .038;
-    add('head', 'skin', sph(.022, 12, 8), [sx * .1, .125, -.005], [0, 0, 0], [.4, 1, .75]);
-    add('head', 'eyeW', sph(.024, 16, 12), [ex, .135, .088], [0, 0, 0], [e, 1.15 * e, .55]);
-    add('head', 'iris', new THREE.CircleGeometry(.0155, 24), [ex, .133, .1015], [0, 0, 0], [e, 1.25 * e, 1]);
-    add('head', 'dark', tor(.0255, F ? .0028 : .0023, 6, 18, PI * 1.05), [ex, .136, .0985], [0, 0, -.025 * PI], [e, 1.2 * e, 1]);
-    add('head', 'dark', new THREE.CapsuleGeometry(F ? .0026 : .0036, .03, 3, 6), [sx * .042, F ? .174 : .168, .093], [0, 0, PI / 2 - sx * (F ? .18 : .08)]);
-  }
-  add('head', 'skin', sph(.0075, 10, 8), [0, .108, .101], [0, 0, 0], [1, 1.2, 1.1]);
-  add('head', 'lip', tor(F ? .016 : .014, .0017, 6, 12, 1.3), [0, .075, .084], [0, 0, -PI / 2 - .65]);
+  // ---- 頭部・顔(目鼻口はテクスチャ。アニメ表現の標準的な手法) ----
+  const hs = F ? .96 : 1.02, hlc = sp.hl;
+  add('head', 'skin', lathe(HEAD, 32), [0, .13, 0], [0, 0, 0], [hs, 1, 1]);
+  const fp = [];
+  for (let i = 0; i <= 24; i++) { const yp = -.075 + .155 * i / 24; fp.push([skullR(yp) * 1.006, yp]); }
+  add('head', 'face', lathe(fp, 24, -.62, 1.24), [0, .13, 0], [0, 0, 0], [hs, 1, 1]);
+  add('head', 'skin', sph(.0065, 10, 8), [0, .105, .1], [0, 0, 0], [1, 1.2, 1.1]);
+  for (const sx of [1, -1]) add('head', 'skin', sph(.022, 12, 8), [sx * .1 * hs, .125, -.005], [0, 0, 0], [.4, 1, .75]);
 
-  // ---- 髪 ----
-  add('head', 'hair', tinted(lathe([[.108, -.01], [.114, .03], [.114, .07], [.104, .108], [.082, .13], [.05, .142], [0, .153]], 32, .55, PI * 2 - 1.1), sp.cap), [0, .13, 0]);
-  for (let i = -4; i <= 4; i++) { // 前髪(男性は短め)
-    const x = i * .021, a = Math.abs(i);
-    const y1 = .262, y2 = .222 - .008 * (a % 3) + (F ? 0 : .012), y3 = .19 - (i % 2 === 0 ? 0 : .012) - .004 * a + (F ? 0 : .02);
-    add('head', 'hair', strand([[x * .5, .27, .03], [x * .95, y1, skullZ(x * .95, y1) + .016], [x * 1.05, y2, skullZ(x * 1.05, y2) + .02], [x * 1.09, y3, skullZ(x * 1.09, y3) + .016]], .014, .002, H0, H1));
+  // ---- 髪(太い房を重ねて体積を出す) ----
+  add('head', 'hair', tinted(lathe([[.113, -.01], [.12, .03], [.12, .07], [.11, .108], [.087, .13], [.054, .142], [0, .155]], 32, .55, PI * 2 - 1.1), sp.cap, hlc), [0, .13, 0]);
+  for (let i = -3; i <= 3; i++) { // 前髪
+    const x = i * .03, a = Math.abs(i);
+    const y1 = .262, y2 = .226 - .008 * (a % 2) + (F ? 0 : .01), y3 = .185 - (i % 2 === 0 ? 0 : .014) - .006 * a + (F ? 0 : .022);
+    add('head', 'hair', strand([[x * .5, .272, .03], [x * .95, y1, skullZ(x * .95, y1) + .02], [x * 1.05, y2, skullZ(x * 1.05, y2) + .026], [x * 1.1 + Math.sign(x) * .004, y3, skullZ(x * 1.1, y3) + .02]], .03, H0, H1, hlc, .5));
   }
   for (const sx of [1, -1]) for (let k = 0; k < 2; k++) { // 横髪
-    const z = k * .02 - .005, tip = F ? -.03 - .02 * k : .06 + .02 * k;
-    add('head', 'hair', strand([[sx * .095, .215, .03 + z], [sx * .112, .15, .045 + z], [sx * .113, .07, .05 + z], [sx * .1, tip + .07, .06 + z], [sx * .09, tip, .075 + z]], .016, .002, H0, H1));
+    const z = k * .025 - .01, tip = F ? -.04 - .03 * k : .05 + .02 * k;
+    add('head', 'hair', strand([[sx * .095, .215, .03 + z], [sx * .115, .15, .045 + z], [sx * .118, .07, .05 + z], [sx * .105, tip + .07, .062 + z], [sx * .09, tip, .078 + z]], .028, H0, H1, hlc, .5));
   }
-  for (let k = 0; k < (F ? 14 : 10); k++) { // 後ろ髪
-    const a = .9 + (PI * 2 - 1.8) * k / ((F ? 14 : 10) - 1), s = Math.sin(a), c = Math.cos(a), L = rnd(k);
+  const nb = F ? 12 : 9;
+  for (let k = 0; k < nb; k++) { // 後ろ髪
+    const a = .9 + (PI * 2 - 1.8) * k / (nb - 1), s = Math.sin(a), c = Math.cos(a), L = rnd(k);
     const P = (r, y) => [r * s, y, r * c], tip = F ? -.05 - .04 * L : .02 - .03 * L;
-    add('head', 'hair', strand([P(.075, .26), P(.12, .17), P(.13, .06), P(.118, tip + .06), P(.11, tip)], .019, .003, H0, H1));
+    add('head', 'hair', strand([P(.075, .26), P(.125, .17), P(.138, .06), P(.125, tip + .06), P(.118, tip)], .036, H0, H1, hlc, .5));
   }
-  if (F) for (let i = 0; i < 7; i++) { // 長いポニーテール(女性)
-    const dx = (i - 3) * .012;
-    add('ponytail', 'hair', strand([[dx * .3, 0, 0], [dx * 1.2, -.08, -.07], [dx * 2 + .01 * Math.sin(i), -.2, -.1], [dx * 2.6, -.34, -.1], [dx * 3, -.46 - .04 * (i % 2), -.08]], .014, .002, H0, H1, .55, 16));
+  if (F) for (let i = 0; i < 5; i++) { // ポニーテール(女性)
+    const dx = (i - 2) * .02;
+    add('ponytail', 'hair', strand([[dx * .3, 0, 0], [dx * 1.4, -.09, -.08], [dx * 2.4 + .014 * Math.sin(i * 1.7), -.22, -.12], [dx * 3, -.38, -.12 + .02 * Math.cos(i)], [dx * 3.4, -.56 - .05 * (i % 2), -.09]], .032, H0, H1, hlc, .5, 18));
   }
-  else for (let i = 0; i < 7; i++) { // 乱れた毛先(男性)
-    const a = i * .9, s = Math.sin(a), c = Math.cos(a);
-    add('head', 'hair', strand([[.02 * s, .265, .02 * c], [.05 * s, .29, .05 * c], [.09 * s, .3 + .012 * rnd(i), .09 * c]], .013, .002, H0, H1));
+  else for (let i = 0; i < 8; i++) { // 跳ねた毛先(男性)
+    const a = i * .78, s = Math.sin(a), c = Math.cos(a);
+    add('head', 'hair', strand([[.02 * s, .262, .02 * c], [.06 * s, .292, .06 * c], [.105 * s, .3 + .014 * rnd(i), .105 * c], [.14 * s, .285 + .02 * rnd(i + 3), .14 * c]], .024, H0, H1, hlc, .55));
   }
   if (F) { add('ponytail', 'gold', tor(.02, .006, 6, 16), [0, -.015, 0], RX); add('ponytail', 'glow', sph(.011, 10, 8), [0, -.015, -.02]); }
   add('head', 'glow', new THREE.OctahedronGeometry(.016), [.098, .19, .05], [0, 0, 0], [1, 1.7, 1]);
@@ -265,7 +317,8 @@ export function buildHero(kind = 'male') {
   add('weaponInner', 'gold', sph(.022, 12, 8), [0, -.155, 0]);
   add('weaponInner', 'glow', new THREE.OctahedronGeometry(.01), [0, -.18, 0]);
 
-  // ---- 素材ごとに結合 ----
+  // ---- 素材ごとに結合 + 輪郭線(反転ハル) ----
+  const outlines = [];
   for (const [key, list] of parts) {
     const [jn, mn] = key.split('|');
     const geo = mergeGeometries(list, false);
@@ -273,6 +326,10 @@ export function buildHero(kind = 'male') {
     const mesh = new THREE.Mesh(geo, m[mn]);
     mesh.name = jn + '_' + mn; mesh.castShadow = true; mesh.receiveShadow = true;
     J[jn].add(mesh);
+    if (mn !== 'glow' && mn !== 'face') {
+      const o = new THREE.Mesh(geo, m.outline); o.name = 'outline_' + mesh.name;
+      J[jn].add(o); outlines.push(o);
+    }
   }
 
   // ---- 待機ポーズ ----
@@ -284,6 +341,7 @@ export function buildHero(kind = 'male') {
 
   return {
     root, joints: J, materials: m, rest, kind,
+    setOutline(on) { outlines.forEach((o) => { o.visible = on; }); },
     update(dt, t) {
       const b = Math.sin(t * 1.7);
       J.chest.rotation.x = rest.chest.x + b * .012;
@@ -297,4 +355,4 @@ export function buildHero(kind = 'male') {
   };
 }
 
-export const BUILD = 'r6';
+export const BUILD = 'r7';

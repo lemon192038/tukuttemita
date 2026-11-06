@@ -14,4 +14,4 @@ export class Input {
   }
   isDown(code) { return this.down.has(code); }
 }
-export const BUILD = 'r6';
+export const BUILD = 'r7';
