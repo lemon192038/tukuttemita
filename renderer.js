@@ -125,3 +125,4 @@ export class Gfx {
 
   get info() { return this.renderer.info; }
 }
+export const BUILD = 'r5';

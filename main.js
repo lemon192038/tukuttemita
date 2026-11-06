@@ -8,24 +8,37 @@ import { Loop } from './loop.js';
 import { Input } from './input.js';
 import { buildTestScene } from './testScene.js';
 import { DebugPanel } from './debugPanel.js';
+import * as mEventbus from './eventbus.js';
+import * as mQuality from './quality.js';
+import * as mRenderer from './renderer.js';
+import * as mLoop from './loop.js';
+import * as mInput from './input.js';
+import * as mEnv from './env.js';
+import * as mTestScene from './testScene.js';
+import * as mPanel from './debugPanel.js';
+import * as mHero from './hero.js';
+
+const BUILD = 'r5';
+document.title = 'AETHERFALL ' + BUILD;
 
 const data = Save.load();
+data.settings.exposure = Math.min(data.settings.exposure, 1.2); // 以前の最大値の保存を引き継がない
 const quality = new QualityManager(data.settings.quality, data.settings.autoQuality);
 
 const gfx = new Gfx(document.getElementById('game'));
 const world = buildTestScene(gfx.renderer);
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 400);
-camera.position.set(0, 3.5, 11);
+const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 400);
+camera.position.set(0, 1.6, 4.8);
 gfx.init(world.scene, camera);
 gfx.shadowLights.push(world.keyLight);
 gfx.setExposure(data.settings.exposure);
 document.getElementById('exposure').value = data.settings.exposure;
 
 const controls = new OrbitControls(camera, gfx.renderer.domElement);
-controls.target.set(0, 1.2, 0);
+controls.target.set(0, 1.05, 0);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.49;
-controls.minDistance = 3; controls.maxDistance = 40;
+controls.minDistance = 1.0; controls.maxDistance = 40;
 
 const panel = new DebugPanel({
   labels: world.labels, quality,
@@ -50,6 +63,26 @@ for (const [id, key] of Object.entries(DIAG)) {
 }
 
 // キー 1〜4 で品質を切り替え
+// 古いファイルの混在検出 / 主人公の生成エラー表示
+const mods = { 'eventbus.js': mEventbus, 'save.js': Save, 'quality.js': mQuality, 'renderer.js': mRenderer, 'loop.js': mLoop,
+  'input.js': mInput, 'env.js': mEnv, 'testScene.js': mTestScene, 'debugPanel.js': mPanel, 'hero.js': mHero };
+const stale = Object.entries(mods).filter(([, mod]) => mod.BUILD !== BUILD).map(([n]) => n);
+if (stale.length) panel.showNotice('古いファイルが残っています: ' + stale.join(', ') + ' (全ファイルを再アップロードしてください)', 30000);
+if (window.__heroError) panel.showNotice('主人公の生成に失敗: ' + window.__heroError, 30000);
+
+// 視点ボタン(正面/側面/背面/斜め)と自動回転
+document.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => {
+  const a = parseFloat(b.dataset.a), d = 4.8;
+  camera.position.set(Math.sin(a) * d, 1.6, Math.cos(a) * d);
+  controls.target.set(0, 1.05, 0);
+}));
+const spin = document.getElementById('spin');
+spin.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  controls.autoRotateSpeed = 1.5;
+  spin.setAttribute('aria-pressed', String(controls.autoRotate));
+});
+
 const input = new Input();
 bus.on('key', (code) => {
   const m = /^Digit([1-4])$/.exec(code);
@@ -70,7 +103,7 @@ const loop = new Loop(
       panel.update({
         fps: loop.fps, cap: quality.cap, level: quality.level, auto: quality.auto, dpr: gfx.dpr, w: sz.x, h: sz.y,
         shadow: gfx.renderer.shadowMap.enabled ? quality.preset.shadowSize : 0, post: gfx.usePost,
-        calls: gfx.info.render.calls, tris: gfx.info.render.triangles, particles: world.particleCount, aa: gfx.aaLabel, bloom: gfx.state.bloom,
+        calls: gfx.info.render.calls, tris: gfx.info.render.triangles, particles: world.particleCount, aa: gfx.aaLabel, build: BUILD, bloom: gfx.state.bloom,
       });
     }
   },

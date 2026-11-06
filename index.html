@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>AETHERFALL - Stage 1</title>
+<title>AETHERFALL - Stage 2</title>
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 { "imports": {
@@ -31,7 +31,11 @@
     </select>
   </label>
   <label class="row"><input type="checkbox" id="auto"> 自動調整</label>
-  <label>露出 <input type="range" id="exposure" min="0.5" max="1.8" step="0.05" value="1"></label>
+  <label>露出 <input type="range" id="exposure" min="0.5" max="1.4" step="0.05" value="1"></label>
+  <div class="views">
+    <button data-a="0">正面</button><button data-a="1.5708">側面</button><button data-a="3.1416">背面</button><button data-a="0.7">斜め</button>
+    <button id="spin" aria-pressed="false">回転</button>
+  </div>
   <details id="diag">
     <summary>診断(負荷の切り分け)</summary>
     <label class="row"><input type="checkbox" id="d-post" checked> ポスト処理</label>

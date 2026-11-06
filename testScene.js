@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeEnvironment } from './env.js';
+import { buildHero } from './hero.js';
 
 // 起伏のある地形の高さ関数(中心の展示エリアは平坦)。後の衝突判定でも使う。
 export function heightAt(x, z) {
@@ -8,17 +9,6 @@ export function heightAt(x, z) {
   const h = 2.2 * Math.sin(x * 0.11) * Math.cos(z * 0.09) + 0.9 * Math.sin(x * 0.29 + z * 0.17) + 0.4 * Math.sin(z * 0.53);
   return h * k;
 }
-
-// 「黒いシルエット問題」の検証用に、素材ごとの球を並べる
-const SAMPLES = [
-  ['肌',         new THREE.MeshPhysicalMaterial({ color: 0xf0c8b0, roughness: 0.55, clearcoat: 0.1 })],
-  ['髪',         new THREE.MeshPhysicalMaterial({ color: 0x2a3566, roughness: 0.35, metalness: 0.1, clearcoat: 0.4 })],
-  ['布',         new THREE.MeshStandardMaterial({ color: 0x8a2a36, roughness: 0.92 })],
-  ['金属(明)',   new THREE.MeshStandardMaterial({ color: 0xc8ccd4, roughness: 0.25, metalness: 1 })],
-  ['金属(暗装甲)', new THREE.MeshStandardMaterial({ color: 0x4a505c, roughness: 0.4, metalness: 0.85 })],
-  ['石',         new THREE.MeshStandardMaterial({ color: 0x8a8578, roughness: 0.95 })],
-  ['発光結晶',   new THREE.MeshStandardMaterial({ color: 0x2a9ad0, emissive: 0x1a8cff, emissiveIntensity: 1.6, roughness: 0.2 })],
-];
 
 export function buildTestScene(renderer) {
   const scene = new THREE.Scene();
@@ -63,19 +53,14 @@ export function buildTestScene(renderer) {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // 素材サンプルの展示台
-  const sphereGeo = new THREE.SphereGeometry(0.6, 48, 32);
-  const padGeo = new THREE.CylinderGeometry(0.55, 0.7, 0.3, 32);
-  const padMat = new THREE.MeshStandardMaterial({ color: 0x6b675f, roughness: 0.9 });
-  const spinners = [];
-  SAMPLES.forEach(([, mat], i) => {
-    const x = (i - (SAMPLES.length - 1) / 2) * 2.4;
-    const pad = new THREE.Mesh(padGeo, padMat); pad.position.set(x, 0.15, 0);
-    pad.castShadow = pad.receiveShadow = true; scene.add(pad);
-    const ball = new THREE.Mesh(sphereGeo, mat); ball.position.set(x, 1.0, 0);
-    ball.castShadow = ball.receiveShadow = true; scene.add(ball);
-    spinners.push(ball);
-  });
+  // 主人公 + 展示台
+  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.3, 0.18, 48), new THREE.MeshStandardMaterial({ color: 0x6b675f, roughness: 0.9 }));
+  pedestal.position.y = 0.09; pedestal.castShadow = pedestal.receiveShadow = true; scene.add(pedestal);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.015, 8, 64), new THREE.MeshStandardMaterial({ color: 0x222233, emissive: 0x7fa0ff, emissiveIntensity: 1.6 }));
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.185; scene.add(ring);
+  let hero = null;
+  try { hero = buildHero(); hero.root.position.y = 0.18; scene.add(hero.root); }
+  catch (e) { console.error(e); window.__heroError = e && e.message ? e.message : String(e); }
 
   // 浮遊粒子(上限はUltra=1.5倍分を確保し、drawRangeで品質に合わせる)
   const BASE = 2000, MAX = BASE * 1.5;
@@ -113,11 +98,11 @@ export function buildTestScene(renderer) {
 
   return {
     scene, keyLight: key,
-    labels: SAMPLES.map((s) => s[0]),
+    labels: ['肌(シーン)', '髪(頂点カラー)', '布', '金', '銀', '発光', '革'],
     setParticleScale(s) { particleCount = Math.floor(BASE * s); pGeo.setDrawRange(0, particleCount); },
     get particleCount() { return particleCount; },
     update(dt, t) {
-      spinners.forEach((m, i) => { m.rotation.y += dt * 0.6; m.position.y = 1.0 + Math.sin(t * 1.2 + i) * 0.05; });
+      if (hero) hero.update(dt, t);
       for (let i = 0; i < particleCount; i++) {
         const k = i * 3 + 1;
         pArr[k] += dt * 0.25;
@@ -128,3 +113,4 @@ export function buildTestScene(renderer) {
     },
   };
 }
+export const BUILD = 'r5';

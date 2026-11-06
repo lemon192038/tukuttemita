@@ -28,3 +28,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1020; col
 @media (max-width: 700px) { #legend { display: none; } }
 #diag summary { min-height: 32px; display: flex; align-items: center; }
 #diag label { min-height: 30px; }
+.views { display: flex; gap: 6px; flex-wrap: wrap; }
+.views button { flex: 1; min-height: 36px; padding: 0 8px; background: #16203a; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+.views button[aria-pressed="true"] { background: #2a4a7a; }

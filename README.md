@@ -1,27 +1,26 @@
-# AETHERFALL — Stage 1: レンダリング基盤
+# AETHERFALL — build r5 (Stage 2: 主人公)
 
-Three.js r160(CDN固定: cdn.jsdelivr.net)。ビルド不要。
+Three.js r160(CDN固定: cdn.jsdelivr.net)。ビルド不要。**フォルダなし(全ファイルをリポジトリ直下)**構成です。
 
-## 起動
-ES Modulesを使うため `file://` では動きません。HTTP経由で開いてください。
-- ローカル: このフォルダで `python3 -m http.server 8000` → http://localhost:8000
-- GitHub Pages: リポジトリのルートにこの中身を置き、Settings → Pages → Branch: main / root を選択
+## 更新方法(重要)
+ZIPを展開し、**全ファイルを選んで**リポジトリ直下にアップロード(同名は上書き)。
+一部だけ上げると古いファイルが混ざります。混在した場合は画面下に「古いファイルが残っています: …」と出ます。
+正しく更新されると、Safariのタブ名と左上の表示に `r5` と出ます。
 
-## 操作(Stage 1)
-- ドラッグ: カメラ回転 / ホイール・ピンチ: ズーム
-- キー 1〜4: 品質 Low / Medium / High / Ultra
-- 右上: 品質、自動調整、露出
+## 操作
+- ドラッグ: 回転 / ピンチ: ズーム / 右上: 視点(正面・側面・背面・斜め)、回転、品質、露出
+- キー 1〜4: 品質 Low〜Ultra
 
-## 見るべき点
-画面中央の7個の球は素材の検証用です(肌・髪・布・明るい金属・暗い装甲・石・発光結晶)。
-**暗い装甲を含め、どれも真っ黒にならず質感の違いが見えること**が合格条件です。
-左上の統計で、品質切替によりDPR・影・ポスト処理・粒子数が実際に変わることを確認できます。
+## ファイル
+index.html / style.css / main.js / renderer.js / quality.js / loop.js / input.js / save.js / eventbus.js /
+env.js(環境マップ) / testScene.js(地形・ライト・展示台) / debugPanel.js / hero.js(主人公)
 
-## 構成
-- src/core: eventbus, save, quality, loop, input, renderer(Composer: Render→Bloom→Vignette→Output)
-- src/world/testScene.js: 起伏地形、4灯ライト、PMREM環境光、素材サンプル、浮遊粒子
-- src/ui/debugPanel.js: 統計と自動品質調整の通知
+## 主人公(hero.js)
+関節ごとのグループ階層(pelvis, spine, chest, neck, head, 腕, 脚, ponytail, cape, weapon)に、
+素材別に結合したメッシュを載せたリジッド・リグ。スキニングはしていません(関節は球で覆っています)。
+後からGLBに差し替える場合は `buildHero()` の戻り値(root / joints / update)を保ってください。
 
-## 色の扱い(黒シルエット対策)
-`outputColorSpace=SRGB`、ACESFilmic、トーンマッピング/色変換はOutputPassで一度だけ実施。
-RoomEnvironmentのPMREMを`scene.environment`に設定し、金属が黒くならないようにしています。
+## 既知の制限(r5時点)
+- 描画・動作は私の環境では未確認(Node構文チェックのみ)。実機確認が必要です。
+- スカートは剛体パネルのため、脚を大きく動かす第3段階で干渉する可能性があります。
+- 指は簡略化(握り手なし)。表情の変化は未実装。

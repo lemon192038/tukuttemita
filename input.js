@@ -14,3 +14,4 @@ export class Input {
   }
   isDown(code) { return this.down.has(code); }
 }
+export const BUILD = 'r5';

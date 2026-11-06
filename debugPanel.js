@@ -20,15 +20,15 @@ export class DebugPanel {
       if (byAuto) this.showNotice(`動作が重いため品質を ${from} → ${level} に自動変更しました`);
     });
   }
-  showNotice(msg) {
+  showNotice(msg, ms = 6000) {
     this.notice.textContent = msg;
     this.notice.hidden = false;
     clearTimeout(this.noticeTimer);
-    this.noticeTimer = setTimeout(() => { this.notice.hidden = true; }, 6000);
+    this.noticeTimer = setTimeout(() => { this.notice.hidden = true; }, ms);
   }
   update(d) {
     this.stats.textContent =
-      `AETHERFALL  Stage 1\n` +
+      `AETHERFALL  Stage 2  ${d.build}\n` +
       `FPS ${d.fps.toFixed(0)}(上限推定 ${d.cap || '計測中'})  品質 ${d.level}${d.auto ? '(自動)' : ''}\n` +
       `DPR ${d.dpr.toFixed(2)}  描画 ${d.w}x${d.h}\n` +
       `影 ${d.shadow ? d.shadow + 'px' : 'OFF'}  ポスト ${d.post ? 'ON' : 'OFF'}\n` +
@@ -37,3 +37,4 @@ export class DebugPanel {
       `粒子 ${d.particles}`;
   }
 }
+export const BUILD = 'r5';

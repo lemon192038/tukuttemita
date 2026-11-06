@@ -25,3 +25,4 @@ export function save(data) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); return true; }
   catch (e) { console.warn('[save] write failed', e); return false; }
 }
+export const BUILD = 'r5';
