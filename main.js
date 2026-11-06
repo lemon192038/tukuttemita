@@ -62,7 +62,7 @@ const loop = new Loop(
       statTimer = 0;
       const sz = gfx.renderer.getDrawingBufferSize(new THREE.Vector2());
       panel.update({
-        fps: loop.fps, level: quality.level, auto: quality.auto, dpr: gfx.dpr, w: sz.x, h: sz.y,
+        fps: loop.fps, cap: quality.cap, level: quality.level, auto: quality.auto, dpr: gfx.dpr, w: sz.x, h: sz.y,
         shadow: gfx.renderer.shadowMap.enabled ? quality.preset.shadowSize : 0, post: gfx.usePost,
         calls: gfx.info.render.calls, tris: gfx.info.render.triangles, particles: world.particleCount,
       });

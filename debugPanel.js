@@ -29,7 +29,7 @@ export class DebugPanel {
   update(d) {
     this.stats.textContent =
       `AETHERFALL  Stage 1\n` +
-      `FPS ${d.fps.toFixed(0)}   品質 ${d.level}${d.auto ? '(自動)' : ''}\n` +
+      `FPS ${d.fps.toFixed(0)}(上限推定 ${d.cap || '計測中'})  品質 ${d.level}${d.auto ? '(自動)' : ''}\n` +
       `DPR ${d.dpr.toFixed(2)}  描画 ${d.w}x${d.h}\n` +
       `影 ${d.shadow ? d.shadow + 'px' : 'OFF'}  ポスト ${d.post ? 'ON' : 'OFF'}\n` +
       `Draw ${d.calls}  Tri ${d.tris}\n` +

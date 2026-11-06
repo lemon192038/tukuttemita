@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { makeEnvironment } from './env.js';
 
 // 起伏のある地形の高さ関数(中心の展示エリアは平坦)。後の衝突判定でも使う。
 export function heightAt(x, z) {
@@ -15,9 +15,9 @@ const SAMPLES = [
   ['髪',         new THREE.MeshPhysicalMaterial({ color: 0x2a3566, roughness: 0.35, metalness: 0.1, clearcoat: 0.4 })],
   ['布',         new THREE.MeshStandardMaterial({ color: 0x8a2a36, roughness: 0.92 })],
   ['金属(明)',   new THREE.MeshStandardMaterial({ color: 0xc8ccd4, roughness: 0.25, metalness: 1 })],
-  ['金属(暗装甲)', new THREE.MeshStandardMaterial({ color: 0x30343c, roughness: 0.35, metalness: 0.9 })],
+  ['金属(暗装甲)', new THREE.MeshStandardMaterial({ color: 0x4a505c, roughness: 0.4, metalness: 0.85 })],
   ['石',         new THREE.MeshStandardMaterial({ color: 0x8a8578, roughness: 0.95 })],
-  ['発光結晶',   new THREE.MeshStandardMaterial({ color: 0x66e0ff, emissive: 0x33c8ff, emissiveIntensity: 2.5, roughness: 0.2 })],
+  ['発光結晶',   new THREE.MeshStandardMaterial({ color: 0x2a9ad0, emissive: 0x1a8cff, emissiveIntensity: 1.6, roughness: 0.2 })],
 ];
 
 export function buildTestScene(renderer) {
@@ -27,9 +27,7 @@ export function buildTestScene(renderer) {
   scene.fog = new THREE.Fog(sky, 40, 140);
 
   // 環境ライティング(PBR反射の土台)
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
+  scene.environment = makeEnvironment(renderer);
 
   // ライト: Hemisphere(Ambient) + Key + Fill + Rim
   scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x5a4a3a, 0.5));

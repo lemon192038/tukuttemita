@@ -15,9 +15,17 @@ export class QualityManager {
     this.level = LEVELS.includes(level) ? level : 'medium';
     this.auto = auto;
     this.lowTime = 0;
-    this.cooldown = 4; // 起動直後は判定しない
+    this.cooldown = 5; // 起動直後は判定しない
+    this.age = 0;
+    this.peak = 0;     // 観測した最大FPS(画面のリフレッシュ上限の推定に使う)
   }
   get preset() { return PRESETS[this.level]; }
+
+  // 低電力モード(30fps上限)等を考慮した上限FPSの推定。未計測ならnull。
+  get cap() {
+    if (this.peak <= 0) return null;
+    return this.peak >= 100 ? 120 : this.peak >= 52 ? 60 : 30;
+  }
 
   set(level, { byAuto = false } = {}) {
     if (!LEVELS.includes(level)) return;
@@ -28,12 +36,15 @@ export class QualityManager {
     bus.emit('quality', { level, from, byAuto });
   }
 
-  // FPSが低い状態が続いたら1段階下げる(UIに通知する)
+  // 「上限の80%未満」が3秒続いたら1段階下げる(UIに通知する)
   tick(fps, dt) {
+    this.age += dt;
+    if (this.age > 5) this.peak = Math.max(this.peak, fps);
     if (!this.auto) return;
     this.cooldown = Math.max(0, this.cooldown - dt);
-    if (this.cooldown > 0) return;
-    this.lowTime = fps < 38 ? this.lowTime + dt : 0;
+    const cap = this.cap;
+    if (this.cooldown > 0 || !cap) return;
+    this.lowTime = fps < cap * 0.8 ? this.lowTime + dt : 0;
     const i = LEVELS.indexOf(this.level);
     if (this.lowTime > 3 && i > 0) this.set(LEVELS[i - 1], { byAuto: true });
   }
