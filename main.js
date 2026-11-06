@@ -43,6 +43,12 @@ bus.on('quality', applyQuality);
 bus.on('settings', () => { data.settings.autoQuality = quality.auto; Save.save(data); });
 applyQuality();
 
+// 診断パネル: 負荷の切り分け用(自動調整はOFFにして使う)
+const DIAG = { 'd-post': 'post', 'd-msaa': 'msaa', 'd-bloom': 'bloom', 'd-fxaa': 'fxaa', 'd-shadow': 'shadow' };
+for (const [id, key] of Object.entries(DIAG)) {
+  document.getElementById(id).addEventListener('change', (e) => { gfx.diag[key] = e.target.checked; applyQuality(); });
+}
+
 // キー 1〜4 で品質を切り替え
 const input = new Input();
 bus.on('key', (code) => {
@@ -64,7 +70,7 @@ const loop = new Loop(
       panel.update({
         fps: loop.fps, cap: quality.cap, level: quality.level, auto: quality.auto, dpr: gfx.dpr, w: sz.x, h: sz.y,
         shadow: gfx.renderer.shadowMap.enabled ? quality.preset.shadowSize : 0, post: gfx.usePost,
-        calls: gfx.info.render.calls, tris: gfx.info.render.triangles, particles: world.particleCount,
+        calls: gfx.info.render.calls, tris: gfx.info.render.triangles, particles: world.particleCount, aa: gfx.aaLabel, bloom: gfx.state.bloom,
       });
     }
   },

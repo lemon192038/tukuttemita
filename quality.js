@@ -4,10 +4,10 @@ export const LEVELS = ['low', 'medium', 'high', 'ultra'];
 
 // 各項目は実際に描画へ反映される(renderer.js / testScene.js)
 export const PRESETS = {
-  low:    { dpr: 1.0, shadowSize: 0,    post: false, bloom: 0,    vignette: false, particleScale: 0.25 },
-  medium: { dpr: 1.5, shadowSize: 1024, post: true,  bloom: 0.30, vignette: false, particleScale: 0.5 },
-  high:   { dpr: 2.0, shadowSize: 2048, post: true,  bloom: 0.40, vignette: true,  particleScale: 1.0 },
-  ultra:  { dpr: 2.5, shadowSize: 4096, post: true,  bloom: 0.50, vignette: true,  particleScale: 1.5 },
+  low:    { dpr: 1.0,  shadowSize: 0,    post: false, bloom: 0,    vignette: false, msaa: 0, particleScale: 0.25 },
+  medium: { dpr: 1.25, shadowSize: 1024, post: true,  bloom: 0.30, vignette: false, msaa: 0, particleScale: 0.5 },
+  high:   { dpr: 1.5,  shadowSize: 2048, post: true,  bloom: 0.40, vignette: true,  msaa: 0, particleScale: 1.0 },
+  ultra:  { dpr: 2.0,  shadowSize: 4096, post: true,  bloom: 0.50, vignette: true,  msaa: 2, particleScale: 1.5 },
 };
 
 export class QualityManager {

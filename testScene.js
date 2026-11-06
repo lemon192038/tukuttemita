@@ -83,10 +83,31 @@ export function buildTestScene(renderer) {
   const pArr = new Float32Array(MAX * 3);
   for (let i = 0; i < MAX; i++) pArr.set([(Math.random() - 0.5) * 40, Math.random() * 9, (Math.random() - 0.5) * 40], i * 3);
   pGeo.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
-  const dust = new THREE.Points(pGeo, new THREE.PointsMaterial({
-    color: 0xfff2c8, size: 0.07, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending,
-  }));
+  const dustMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uScale: { value: 600 }, uSize: { value: 0.07 }, uClamp: { value: new THREE.Vector2(1, 4) } },
+    vertexShader: `uniform float uScale; uniform float uSize; uniform vec2 uClamp; varying float vFade;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z;
+        gl_PointSize = clamp(uSize * uScale / d, uClamp.x, uClamp.y);
+        vFade = smoothstep(0.8, 3.0, d);
+        gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying float vFade;
+      void main(){ float r = length(gl_PointCoord - 0.5) * 2.0; if (r > 1.0) discard;
+        float a = smoothstep(1.0, 0.1, r) * 0.7 * vFade;
+        gl_FragColor = vec4(vec3(1.0, 0.95, 0.78) * a, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  });
+  const dust = new THREE.Points(pGeo, dustMat);
   dust.frustumCulled = false;
+  const dbSize = new THREE.Vector2();
+  dust.onBeforeRender = (r, s, cam) => {
+    r.getDrawingBufferSize(dbSize);
+    dustMat.uniforms.uScale.value = dbSize.y * 0.5 / Math.tan(cam.fov * Math.PI / 360);
+    const pr = r.getPixelRatio();
+    dustMat.uniforms.uClamp.value.set(0.75 * pr, 3.5 * pr);
+  };
   scene.add(dust);
   let particleCount = BASE;
 

@@ -32,6 +32,14 @@
   </label>
   <label class="row"><input type="checkbox" id="auto"> 自動調整</label>
   <label>露出 <input type="range" id="exposure" min="0.5" max="1.8" step="0.05" value="1"></label>
+  <details id="diag">
+    <summary>診断(負荷の切り分け)</summary>
+    <label class="row"><input type="checkbox" id="d-post" checked> ポスト処理</label>
+    <label class="row"><input type="checkbox" id="d-msaa" checked> MSAA</label>
+    <label class="row"><input type="checkbox" id="d-bloom" checked> ブルーム</label>
+    <label class="row"><input type="checkbox" id="d-fxaa" checked> FXAA</label>
+    <label class="row"><input type="checkbox" id="d-shadow" checked> 影</label>
+  </details>
 </section>
 
 <div id="notice" role="status" hidden></div>
