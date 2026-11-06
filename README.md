@@ -1,15 +1,15 @@
-# AETHERFALL — build r5 (Stage 2: 主人公)
+# AETHERFALL — build r6 (Stage 2: 男女の主人公)
 
 Three.js r160(CDN固定: cdn.jsdelivr.net)。ビルド不要。**フォルダなし(全ファイルをリポジトリ直下)**構成です。
 
 ## 更新方法(重要)
 ZIPを展開し、**全ファイルを選んで**リポジトリ直下にアップロード(同名は上書き)。
 一部だけ上げると古いファイルが混ざります。混在した場合は画面下に「古いファイルが残っています: …」と出ます。
-正しく更新されると、Safariのタブ名と左上の表示に `r5` と出ます。
+正しく更新されると、Safariのタブ名と左上の表示に `r6` と出ます。
 
 ## 操作
 - ドラッグ: 回転 / ピンチ: ズーム / 右上: 視点(正面・側面・背面・斜め)、回転、品質、露出
-- キー 1〜4: 品質 Low〜Ultra
+- キー 1〜4: 品質 Low〜Ultra / キー C または右上「男・女」: キャラクター切替
 
 ## ファイル
 index.html / style.css / main.js / renderer.js / quality.js / loop.js / input.js / save.js / eventbus.js /

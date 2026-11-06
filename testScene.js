@@ -10,7 +10,7 @@ export function heightAt(x, z) {
   return h * k;
 }
 
-export function buildTestScene(renderer) {
+export function buildTestScene(renderer, kind = 'male') {
   const scene = new THREE.Scene();
   const sky = new THREE.Color(0x9db8d6);
   scene.background = sky;
@@ -58,9 +58,20 @@ export function buildTestScene(renderer) {
   pedestal.position.y = 0.09; pedestal.castShadow = pedestal.receiveShadow = true; scene.add(pedestal);
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1.08, 0.015, 8, 64), new THREE.MeshStandardMaterial({ color: 0x222233, emissive: 0x7fa0ff, emissiveIntensity: 1.6 }));
   ring.rotation.x = Math.PI / 2; ring.position.y = 0.185; scene.add(ring);
-  let hero = null;
-  try { hero = buildHero(); hero.root.position.y = 0.18; scene.add(hero.root); }
-  catch (e) { console.error(e); window.__heroError = e && e.message ? e.message : String(e); }
+  let hero = null, heroKind = kind;
+  const disposeHero = () => {
+    if (!hero) return;
+    scene.remove(hero.root);
+    hero.root.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    Object.values(hero.materials).forEach((mt) => { if (mt.map) mt.map.dispose(); mt.dispose(); });
+    hero = null;
+  };
+  const setHero = (k) => {
+    disposeHero(); heroKind = k;
+    try { hero = buildHero(k); hero.root.position.y = 0.18; scene.add(hero.root); window.__heroError = null; }
+    catch (e) { console.error(e); window.__heroError = e && e.message ? e.message : String(e); }
+  };
+  setHero(kind);
 
   // 浮遊粒子(上限はUltra=1.5倍分を確保し、drawRangeで品質に合わせる)
   const BASE = 2000, MAX = BASE * 1.5;
@@ -98,6 +109,7 @@ export function buildTestScene(renderer) {
 
   return {
     scene, keyLight: key,
+    setHero, get heroKind() { return heroKind; },
     labels: ['肌(シーン)', '髪(頂点カラー)', '布', '金', '銀', '発光', '革'],
     setParticleScale(s) { particleCount = Math.floor(BASE * s); pGeo.setDrawRange(0, particleCount); },
     get particleCount() { return particleCount; },
@@ -113,4 +125,4 @@ export function buildTestScene(renderer) {
     },
   };
 }
-export const BUILD = 'r5';
+export const BUILD = 'r6';

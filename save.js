@@ -1,7 +1,7 @@
 // LocalStorage保存。失敗してもゲームは止めない。
 const KEY = 'aetherfall.save.v1';
 const DEFAULTS = {
-  settings: { quality: 'medium', autoQuality: true, exposure: 1.0 },
+  settings: { quality: 'medium', autoQuality: true, exposure: 1.0, character: 'male' },
   progress: {},
 };
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -25,4 +25,4 @@ export function save(data) {
   try { localStorage.setItem(KEY, JSON.stringify(data)); return true; }
   catch (e) { console.warn('[save] write failed', e); return false; }
 }
-export const BUILD = 'r5';
+export const BUILD = 'r6';

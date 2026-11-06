@@ -49,4 +49,4 @@ export class QualityManager {
     if (this.lowTime > 3 && i > 0) this.set(LEVELS[i - 1], { byAuto: true });
   }
 }
-export const BUILD = 'r5';
+export const BUILD = 'r6';

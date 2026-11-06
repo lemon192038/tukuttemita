@@ -18,7 +18,7 @@ import * as mTestScene from './testScene.js';
 import * as mPanel from './debugPanel.js';
 import * as mHero from './hero.js';
 
-const BUILD = 'r5';
+const BUILD = 'r6';
 document.title = 'AETHERFALL ' + BUILD;
 
 const data = Save.load();
@@ -26,7 +26,7 @@ data.settings.exposure = Math.min(data.settings.exposure, 1.2); // 以前の最�
 const quality = new QualityManager(data.settings.quality, data.settings.autoQuality);
 
 const gfx = new Gfx(document.getElementById('game'));
-const world = buildTestScene(gfx.renderer);
+const world = buildTestScene(gfx.renderer, data.settings.character === 'female' ? 'female' : 'male');
 const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 400);
 camera.position.set(0, 1.6, 4.8);
 gfx.init(world.scene, camera);
@@ -82,6 +82,17 @@ spin.addEventListener('click', () => {
   controls.autoRotateSpeed = 1.5;
   spin.setAttribute('aria-pressed', String(controls.autoRotate));
 });
+
+// 操作キャラクターの切替(男 / 女)。キー C でも切替
+const charBtns = document.querySelectorAll('[data-c]');
+const markChar = () => charBtns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === world.heroKind)));
+const pickChar = (k) => {
+  world.setHero(k); data.settings.character = k; Save.save(data); markChar();
+  if (window.__heroError) panel.showNotice('生成に失敗: ' + window.__heroError, 30000);
+};
+charBtns.forEach((b) => b.addEventListener('click', () => pickChar(b.dataset.c)));
+markChar();
+bus.on('key', (c) => { if (c === 'KeyC') pickChar(world.heroKind === 'male' ? 'female' : 'male'); });
 
 const input = new Input();
 bus.on('key', (code) => {
